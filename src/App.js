@@ -17,6 +17,11 @@ import WelcomePage from './pages/WelcomePage';
 import BookDetailPage from './pages/BookDetailPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
+import AdminBooksPage from './pages/AdminBooksPage';
+import AddBookPage from './pages/AddBookPage';
+import AdminPromotionsPage from './pages/AdminPromotionsPage';
+import AddPromotionPage from './pages/AddPromotionPage';
+import EditPromotionPage from './pages/EditPromotionPage';
 
 export default function App() {
   return (
@@ -50,6 +55,8 @@ function AppContent() {
       .then(res => res.json())
       .then(data => {
         if (data.authenticated) {
+          // Store userID in localStorage for profile updates
+          localStorage.setItem('userID', data.user_id);
           setAuth({
             isLoggedIn: true,
             userRole: data.user_role,
@@ -243,6 +250,8 @@ function AppContent() {
           userName: null,
           userEmail: null,
         });
+        // Clear localStorage on logout
+        localStorage.removeItem('userID');
         // Clear cart on logout and load guest cart
         setCartItems([]);
         CartService.clearGuestCart();
@@ -321,16 +330,15 @@ function AppContent() {
         } />
         <Route path="/book/:id" element={<BookDetailPage handleAddToCart={handleAddToCart} />} />
         <Route path="/cart" element={<CartPage cartItems={cartItems} handleQuantityChange={handleQuantityChange} isLoggedIn={auth.isLoggedIn} />} />
-        <Route path="/checkout" element={
-          auth.isLoggedIn ? (
-            <CheckoutPage cartItems={cartItems} setCartItems={setCartItems} setOrders={setOrders} />
-          ) : (
-            <Navigate to="/login" replace />
-          )
-        } />
+        <Route path="/checkout" element={<CheckoutPage cartItems={cartItems} setCartItems={setCartItems} setOrders={setOrders} />} />
         <Route path="/order-history" element={auth.isLoggedIn ? <OrderHistoryPage orders={orders} setCartItems={setCartItems} /> : <Navigate to="/register" />} />
         <Route path="/profile" element={auth.isLoggedIn ? <ProfilePage /> : <Navigate to="/register" />} />
         <Route path="/admin" element={auth.isLoggedIn && auth.userRole === 'admin' ? <AdminPage /> : <Navigate to="/register" />} />
+        <Route path="/admin/books" element={auth.isLoggedIn && auth.userRole === 'admin' ? <AdminBooksPage /> : <Navigate to="/register" />} />
+        <Route path="/admin/books/add" element={auth.isLoggedIn && auth.userRole === 'admin' ? <AddBookPage /> : <Navigate to="/register" />} />
+        <Route path="/admin/promotions" element={auth.isLoggedIn && auth.userRole === 'admin' ? <AdminPromotionsPage /> : <Navigate to="/register" />} />
+        <Route path="/admin/promotions/add" element={auth.isLoggedIn && auth.userRole === 'admin' ? <AddPromotionPage /> : <Navigate to="/register" />} />
+        <Route path="/admin/promotions/edit/:id" element={auth.isLoggedIn && auth.userRole === 'admin' ? <EditPromotionPage /> : <Navigate to="/register" />} />
       </Routes>
     </div>
   );

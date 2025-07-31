@@ -81,4 +81,44 @@
         <url-pattern>/api/cart/*</url-pattern>
     </servlet-mapping>
 
+    <servlet>
+        <servlet-name>PromotionServlet</servlet-name>
+        <servlet-class>com.bookstore.web.PromotionServlet</servlet-class>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>PromotionServlet</servlet-name>
+        <url-pattern>/api/promotions/*</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>CheckoutServlet</servlet-name>
+        <servlet-class>com.bookstore.web.CheckoutServlet</servlet-class>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>CheckoutServlet</servlet-name>
+        <url-pattern>/api/checkout/*</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>OrdersServlet</servlet-name>
+        <servlet-class>com.bookstore.web.OrdersServlet</servlet-class>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>OrdersServlet</servlet-name>
+        <url-pattern>/api/orders/*</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>AdminAccessServlet</servlet-name>
+        <servlet-class>com.bookstore.web.AdminAccessServlet</servlet-class>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>AdminAccessServlet</servlet-name>
+        <url-pattern>/api/admin/*</url-pattern>
+    </servlet-mapping>
+
 </web-app> 

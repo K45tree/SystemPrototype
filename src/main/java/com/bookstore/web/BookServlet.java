@@ -43,6 +43,7 @@ import com.bookstore.db.BookDatabase;
 import com.bookstore.records.BookRecords;
 import com.bookstore.db.BookNotFoundException;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
@@ -56,38 +57,49 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class BookServlet extends HttpServlet {
-    private final Gson gson = new Gson();
+public class BookServlet extends AdminSecuredServlet {
+    // Fix: Set Gson to use yyyy-MM-dd for SQL Date
+    private final Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd").create();
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
        
-        BookDatabase bookDb = new BookDatabase();
+        setCorsHeaders(resp);
         
-        resp.setHeader("Access-Control-Allow-Origin", "*");
-        resp.setHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
-        resp.setHeader("Access-Control-Allow-Headers", "Content-Type");
-        resp.setContentType("application/json");
-        resp.setCharacterEncoding("UTF-8");
-
-        PrintWriter out = resp.getWriter();
-
-        String pathInfo = req.getPathInfo();
-        if (pathInfo == null || !pathInfo.equals("/calculate")) {
-            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            out.print("{\"error\": \"Invalid endpoint for POST request. Use /calculate.\"}");
-            out.flush();
+        // Verify admin access for book creation operations
+        if (!verifyAdminAccess(req, resp)) {
             return;
         }
-
+        
+        BookDatabase bookDb = new BookDatabase();
+        PrintWriter out = resp.getWriter();
+        String pathInfo = req.getPathInfo();
+        
         if (bookDb.connectDb()) {
             try {
                 String requestBody = req.getReader().lines().collect(Collectors.joining(System.lineSeparator()));
-                CartItem[] cartItems = gson.fromJson(requestBody, CartItem[].class);
-
-                Map<String, Double> result = BookActions.calculateCheckout(bookDb.getConnection(), cartItems);
                 
-                out.print(gson.toJson(result));
+                if (pathInfo != null && pathInfo.equals("/calculate")) {
+                    // Handle checkout calculation
+                    CartItem[] cartItems = gson.fromJson(requestBody, CartItem[].class);
+                    Map<String, Double> result = BookActions.calculateCheckout(bookDb.getConnection(), cartItems);
+                    out.print(gson.toJson(result));
+                } else if (pathInfo == null || pathInfo.equals("/")) {
+                    // Handle adding a new book
+                    BookRecords newBook = gson.fromJson(requestBody, BookRecords.class);
+                    String result = bookDb.addBook(newBook);
+                    
+                    if (result.equals("Book Added.")) {
+                        resp.setStatus(HttpServletResponse.SC_CREATED);
+                        out.print("{\"message\": \"" + result + "\"}");
+                    } else {
+                        resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                        out.print("{\"error\": \"" + result + "\"}");
+                    }
+                } else {
+                    resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                    out.print("{\"error\": \"Invalid endpoint for POST request. Use /calculate for checkout or root for adding books.\"}");
+                }
 
             } catch (BookNotFoundException e) {
                 resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
@@ -108,12 +120,9 @@ public class BookServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        BookDatabase bookDb = new BookDatabase();
-
-        resp.setHeader("Access-Control-Allow-Origin", "*");
-        resp.setContentType("application/json");
-        resp.setCharacterEncoding("UTF-8");
+        setCorsHeaders(resp);
         
+        BookDatabase bookDb = new BookDatabase();
         PrintWriter out = resp.getWriter();
 
         if (bookDb.connectDb()) {
@@ -172,10 +181,7 @@ public class BookServlet extends HttpServlet {
 
     @Override
     protected void doOptions(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        // Handle pre-flight CORS requests from the browser
-        resp.setHeader("Access-Control-Allow-Origin", "*");
-        resp.setHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
-        resp.setHeader("Access-Control-Allow-Headers", "Content-Type");
+        setCorsHeaders(resp);
         resp.setStatus(HttpServletResponse.SC_OK);
     }
 } 
